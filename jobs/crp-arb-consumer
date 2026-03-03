@@ -1,0 +1,17 @@
+resources:
+  jobs:
+    crb_arb_consumer:
+      name: crb-arb-consumer
+      timeout_seconds: 72000
+      schedule:
+        quartz_cron_expression: 0 0 8 * * ?
+        timezone_id: Europe/Kiev
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: Run_Consumer
+          notebook_task:
+            notebook_path: /Workspace/Users/dmytro874@softserve.academy/Cryptocurrency-Arbitrage/consumers/kline-consumer
+            source: WORKSPACE
+          existing_cluster_id: 0224-080628-dezgcaku
+      queue:
+        enabled: true
