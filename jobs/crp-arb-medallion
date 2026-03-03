@@ -1,0 +1,30 @@
+resources:
+  jobs:
+    crp_arb_medallion:
+      name: crp-arb-medallion
+      schedule:
+        quartz_cron_expression: 0 0/15 0-3,8-23 * * ?
+        timezone_id: Europe/Kiev
+        pause_status: PAUSED
+      tasks:
+        - task_key: Bronze_to_Silver
+          notebook_task:
+            notebook_path: /Workspace/Users/dmytro874@softserve.academy/Cryptocurrency-Arbitrage/transformations/bronze_silver
+            source: WORKSPACE
+          existing_cluster_id: 0224-080628-dezgcaku
+        - task_key: Silver_to_Gold_15m
+          depends_on:
+            - task_key: Bronze_to_Silver
+          notebook_task:
+            notebook_path: /Workspace/Users/dmytro874@softserve.academy/Cryptocurrency-Arbitrage/transformations/silver_to_gold_15m
+            source: WORKSPACE
+          existing_cluster_id: 0224-080628-dezgcaku
+        - task_key: Silver_to_Gold_24h
+          depends_on:
+            - task_key: Silver_to_Gold_15m
+          notebook_task:
+            notebook_path: /Workspace/Users/dmytro874@softserve.academy/Cryptocurrency-Arbitrage/transformations/silver_to_gold_24h
+            source: WORKSPACE
+          existing_cluster_id: 0224-080628-dezgcaku
+      queue:
+        enabled: true
