@@ -1,0 +1,700 @@
+{
+  "datasets": [
+    {
+      "name": "24d79aa5",
+      "displayName": "P1VolatilityHeatmap",
+      "queryLines": [
+        "SELECT\r\n",
+        "    ticker,\r\n",
+        "    date_format(event_timestamp, 'HH:mm') AS time_window,\r\n",
+        "    volatility_pct\r\n",
+        "FROM crp_arb_dev.gold.crypto_data_15m\r\n",
+        "WHERE event_timestamp >= current_timestamp() - INTERVAL 15 MINUTE\r\n",
+        "ORDER BY event_timestamp DESC"
+      ]
+    },
+    {
+      "name": "5fd184a2",
+      "displayName": "P1LiveWhaleAlerts",
+      "queryLines": [
+        "SELECT\r\n",
+        "    ticker,\r\n",
+        "    date_format(event_timestamp, 'HH:mm:ss') AS exact_time,\r\n",
+        "    trading_volume,\r\n",
+        "    close,\r\n",
+        "    (trading_volume * close) AS usd_volume\r\n",
+        "FROM crp_arb_dev.gold.crypto_data_15m\r\n",
+        "WHERE (trading_volume * close) > 500000 \r\n",
+        "ORDER BY event_timestamp DESC\r\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "5ec72c61",
+      "displayName": "P1RealtimeMarketSentiment",
+      "queryLines": [
+        "SELECT\r\n",
+        "    market_signal,\r\n",
+        "    COUNT(*) AS signal_count\r\n",
+        "FROM crp_arb_dev.gold.crypto_data_15m\r\n",
+        "WHERE event_timestamp >= current_timestamp() - INTERVAL 15 MINUTE\r\n",
+        "GROUP BY market_signal"
+      ]
+    },
+    {
+      "name": "8a80f9b3",
+      "displayName": "P1PriceVSVolumeCorrelation",
+      "queryLines": [
+        "SELECT \r\n",
+        "    date_format(event_timestamp, 'HH:mm') AS time_window,\r\n",
+        "    ticker,\r\n",
+        "    close,\r\n",
+        "    trading_volume\r\n",
+        "FROM crp_arb_dev.gold.crypto_data_15m\r\n",
+        "WHERE event_timestamp >= current_timestamp() - INTERVAL 15 MINUTE\r\n",
+        "ORDER BY event_timestamp ASC"
+      ]
+    },
+    {
+      "name": "9ec4e81e",
+      "displayName": "P2TopPerformers",
+      "queryLines": [
+        "SELECT \r\n",
+        "    ticker, \r\n",
+        "    daily_performance_pct,\r\n",
+        "    CASE WHEN daily_performance_pct > 0 THEN 'Positive' ELSE 'Negative' END AS trend\r\n",
+        "FROM crp_arb_dev.gold.crypto_data_24h \r\n",
+        "WHERE event_timestamp >= current_timestamp() - INTERVAL 1 DAY \r\n",
+        "ORDER BY daily_performance_pct DESC"
+      ]
+    },
+    {
+      "name": "474e14c1",
+      "displayName": "P2TradingVolumeShare",
+      "queryLines": [
+        "SELECT \r\n",
+        "    ticker, \r\n",
+        "    SUM(trading_volume) AS total_volume \r\n",
+        "FROM crp_arb_dev.gold.crypto_data_24h \r\n",
+        "WHERE event_timestamp >= current_timestamp() - INTERVAL 1 DAY \r\n",
+        "GROUP BY ticker"
+      ]
+    },
+    {
+      "name": "1b42a7aa",
+      "displayName": "P2AssetVolatilitySpread",
+      "queryLines": [
+        "SELECT \r\n",
+        "    ticker, \r\n",
+        "    (day_high - day_low) AS daily_range_usd \r\n",
+        "FROM crp_arb_dev.gold.crypto_data_24h \r\n",
+        "WHERE event_timestamp >= current_timestamp() - INTERVAL 1 DAY\r\n",
+        "ORDER BY daily_range_usd DESC"
+      ]
+    },
+    {
+      "name": "9d270ac3",
+      "displayName": "P2PriceTrend24h",
+      "queryLines": [
+        "SELECT \r\n",
+        "    date_format(event_timestamp, 'MMM-dd HH:mm') AS time, \r\n",
+        "    ticker, \r\n",
+        "    close \r\n",
+        "FROM crp_arb_dev.gold.crypto_data_24h \r\n",
+        "ORDER BY event_timestamp ASC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "47f03fc1",
+      "displayName": "15minPage",
+      "layout": [
+        {
+          "widget": {
+            "name": "volatility-heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "24d79aa5",
+                  "fields": [
+                    {
+                      "name": "sum(volatility_pct)",
+                      "expression": "SUM(`volatility_pct`)"
+                    },
+                    {
+                      "name": "time_window",
+                      "expression": "`time_window`"
+                    },
+                    {
+                      "name": "ticker",
+                      "expression": "`ticker`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Volatility Heatmap",
+                "showDescription": true,
+                "description": "Visualizes relative price volatility (volatility_pct) across different tickers, pinpointing high-risk market periods within 15-minute intervals."
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "time_window",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "ticker",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "sum(volatility_pct)",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "scheme",
+                      "scheme": "reds"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "whale-tracker",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5fd184a2",
+                  "fields": [
+                    {
+                      "name": "ticker",
+                      "expression": "`ticker`"
+                    },
+                    {
+                      "name": "exact_time",
+                      "expression": "`exact_time`"
+                    },
+                    {
+                      "name": "trading_volume",
+                      "expression": "`trading_volume`"
+                    },
+                    {
+                      "name": "close",
+                      "expression": "`close`"
+                    },
+                    {
+                      "name": "usd_volume",
+                      "expression": "`usd_volume`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Whale Tracker",
+                "showDescription": true,
+                "description": "Identifies significant institutional activity by monitoring high-volume trades that exceed specific USD thresholds in near real-time."
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "ticker"
+                  },
+                  {
+                    "fieldName": "exact_time"
+                  },
+                  {
+                    "fieldName": "trading_volume"
+                  },
+                  {
+                    "fieldName": "close"
+                  },
+                  {
+                    "fieldName": "usd_volume",
+                    "style": {
+                      "type": "basic",
+                      "backgroundColor": {
+                        "themeColorType": "visualizationColors",
+                        "position": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "p1realtime-market-sentiment-indikator-nastroyu",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5ec72c61",
+                  "fields": [
+                    {
+                      "name": "signal_count",
+                      "expression": "`signal_count`"
+                    },
+                    {
+                      "name": "market_signal",
+                      "expression": "`market_signal`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showDescription": true,
+                "title": "Sentiment Indicator",
+                "showTitle": true,
+                "description": "Provides an aggregate view of current market trends by categorizing price movements into Bullish, Bearish, or Stable signals."
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "signal_count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "market_signal",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "price-vs-volume-correlation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8a80f9b3",
+                  "fields": [
+                    {
+                      "name": "time_window",
+                      "expression": "`time_window`"
+                    },
+                    {
+                      "name": "sum(trading_volume)",
+                      "expression": "SUM(`trading_volume`)"
+                    },
+                    {
+                      "name": "sum(close)",
+                      "expression": "SUM(`close`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "mark": {
+                "layout": "group"
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Price vs. Volume Correlation",
+                "showDescription": true,
+                "description": "A dual-axis visualization correlating asset closing prices with trading volumes to validate price trends through liquidity analysis."
+              },
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "time_window",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(trading_volume)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative",
+                      "reverse": false
+                    },
+                    "format": {
+                      "type": "number-plain",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 2
+                      }
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(close)"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "28aacf11",
+      "displayName": "24hPage",
+      "layout": [
+        {
+          "widget": {
+            "name": "24h-price-performance",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "9ec4e81e",
+                  "fields": [
+                    {
+                      "name": "trend",
+                      "expression": "`trend`"
+                    },
+                    {
+                      "name": "sum(daily_performance_pct)",
+                      "expression": "SUM(`daily_performance_pct`)"
+                    },
+                    {
+                      "name": "avg(daily_performance_pct)",
+                      "expression": "AVG(`daily_performance_pct`)"
+                    },
+                    {
+                      "name": "ticker",
+                      "expression": "`ticker`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showDescription": true,
+                "description": "A ranking of assets based on their daily price percentage change, highlighting the strongest gainers and losers.",
+                "title": "24h Price Performance",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(daily_performance_pct)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "ticker",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "trend",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "Positive",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 3
+                        }
+                      },
+                      {
+                        "value": "Negative",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      }
+                    ]
+                  }
+                },
+                "label": {
+                  "show": false
+                },
+                "extra": [
+                  {
+                    "fieldName": "sum(daily_performance_pct)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-trading-volume-share",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "474e14c1",
+                  "fields": [
+                    {
+                      "name": "total_volume",
+                      "expression": "`total_volume`"
+                    },
+                    {
+                      "name": "ticker",
+                      "expression": "`ticker`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Trading Volume Share",
+                "showDescription": true,
+                "description": "Analyzes the distribution of total trading volume among assets to identify the most traded cryptocurrencies of the day."
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "total_volume",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "ticker",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "high-low-price-spread",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1b42a7aa",
+                  "fields": [
+                    {
+                      "name": "sum(daily_range_usd)",
+                      "expression": "SUM(`daily_range_usd`)"
+                    },
+                    {
+                      "name": "ticker",
+                      "expression": "`ticker`"
+                    },
+                    {
+                      "name": "avg(daily_range_usd)",
+                      "expression": "AVG(`daily_range_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "High-Low Price Spread",
+                "description": "Measures market volatility by calculating the difference between the daily maximum and minimum prices for each asset."
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "ticker",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(daily_range_usd)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "size": {
+                  "fieldName": "sum(daily_range_usd)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-closing-price-trends",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "9d270ac3",
+                  "fields": [
+                    {
+                      "name": "ticker",
+                      "expression": "`ticker`"
+                    },
+                    {
+                      "name": "time",
+                      "expression": "`time`"
+                    },
+                    {
+                      "name": "avg(close)",
+                      "expression": "AVG(`close`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Daily Closing Price Trends",
+                "description": "Tracks the historical progression of asset closing prices over the last 24-hour periods to monitor long-term growth patterns."
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "time",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(close)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": false
+                },
+                "extra": [
+                  {
+                    "fieldName": "ticker"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
